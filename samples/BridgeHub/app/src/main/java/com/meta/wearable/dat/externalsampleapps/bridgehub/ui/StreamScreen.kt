@@ -56,6 +56,7 @@ fun StreamScreen(
         ),
 ) {
   val streamUiState by streamViewModel.uiState.collectAsStateWithLifecycle()
+  val activity = LocalActivity.current
 
   LaunchedEffect(Unit) { streamViewModel.startStream() }
 
@@ -97,7 +98,7 @@ fun StreamScreen(
         SwitchButton(
             label = stringResource(R.string.voice_button_title),
             onClick = {
-              val ctx = (LocalActivity.current ?: return@SwitchButton)
+              val ctx = activity ?: return@SwitchButton
               ctx.startActivity(
                   android.content.Intent(
                       ctx,
