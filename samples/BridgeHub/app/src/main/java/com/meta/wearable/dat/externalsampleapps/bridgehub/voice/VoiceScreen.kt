@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
@@ -93,10 +94,14 @@ fun VoiceScreen(
         singleLine = true,
     )
 
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
       Button(
           onClick = { relayClient.connect(relayUrlState.value) },
           enabled = status != "connected",
+          modifier = Modifier.weight(1f),
       ) {
         Text(stringResource(R.string.voice_connect))
       }
@@ -107,6 +112,7 @@ fun VoiceScreen(
             audioPlayer.stop()
           },
           enabled = status == "connected",
+          modifier = Modifier.weight(1f),
       ) {
         Text(stringResource(R.string.voice_disconnect))
       }
@@ -125,37 +131,39 @@ fun VoiceScreen(
 
     // Push-to-talk
     Text(text = stringResource(R.string.voice_hold_to_talk))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
+
+    val pttColor =
+        if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+
+    Button(
+        onClick = { /* handled by press gesture */ },
+        colors = ButtonDefaults.buttonColors(containerColor = pttColor),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(96.dp)
+                .pointerInput(status) {
+                  detectTapGestures(
+                      onPress = {
+                        if (status != "connected") return@detectTapGestures
+                        micLastError = null
+                        bytesSent = 0
+                        isRecording = true
+                        audioPlayer.stop()
+                        relayClient.sendPause()
+                        micStreamer.start()
+                        try {
+                          tryAwaitRelease()
+                        } finally {
+                          micStreamer.stop()
+                          relayClient.sendResume()
+                          isRecording = false
+                        }
+                      },
+                  )
+                },
     ) {
-      Button(
-          onClick = { /* handled by press gesture */ },
-          modifier =
-              Modifier
-                  .pointerInput(status) {
-                    detectTapGestures(
-                        onPress = {
-                          if (status != "connected") return@detectTapGestures
-                          micLastError = null
-                          bytesSent = 0
-                          isRecording = true
-                          audioPlayer.stop()
-                          relayClient.sendPause()
-                          micStreamer.start()
-                          try {
-                            tryAwaitRelease()
-                          } finally {
-                            micStreamer.stop()
-                            relayClient.sendResume()
-                            isRecording = false
-                          }
-                        },
-                    )
-                  },
-      ) {
-        Text("PTT")
-      }
+      Text(if (isRecording) "LISTENING…" else "HOLD TO TALK")
     }
   }
 }
