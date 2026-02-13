@@ -16,9 +16,9 @@ class MicStreamer(
   private var job: Job? = null
   private var recorder: AudioRecord? = null
 
-  // Hume recommends 20ms chunks.
-  private val sampleRate = 16000
-  private val bytesPer20ms = 640 // 16kHz * 0.02s * 2 bytes
+  // Hume recommends 20ms chunks. 48kHz is widely supported on Android devices.
+  private val sampleRate = 48000
+  private val bytesPer20ms = 1920 // 48kHz * 0.02s * 2 bytes
 
   fun start() {
     if (job != null) return
@@ -34,7 +34,7 @@ class MicStreamer(
 
     val r =
         AudioRecord(
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
+            MediaRecorder.AudioSource.MIC,
             sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
@@ -58,9 +58,9 @@ class MicStreamer(
             val n = r.read(frame, 0, frame.size)
             if (n <= 0) continue
             if (n == frame.size) {
-              onPcmChunk(frame)
+              // Copy because `frame` is reused.
+              onPcmChunk(frame.copyOf())
             } else {
-              // Copy exact bytes read
               onPcmChunk(frame.copyOfRange(0, n))
             }
           }
