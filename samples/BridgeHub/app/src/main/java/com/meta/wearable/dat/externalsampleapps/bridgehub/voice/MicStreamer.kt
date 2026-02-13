@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 
 class MicStreamer(
     private val onPcmChunk: (ByteArray) -> Unit,
+    private val onError: (String) -> Unit = {},
 ) {
   private var job: Job? = null
   private var recorder: AudioRecord? = null
@@ -22,6 +23,7 @@ class MicStreamer(
 
   fun start() {
     if (job != null) return
+    try {
 
     val minBuf =
         AudioRecord.getMinBufferSize(
@@ -49,6 +51,9 @@ class MicStreamer(
 
     recorder = r
     r.startRecording()
+    if (r.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+      onError("AudioRecord failed to enter RECORDING state")
+    }
 
     val scope = CoroutineScope(Dispatchers.IO)
     job =
@@ -65,6 +70,10 @@ class MicStreamer(
             }
           }
         }
+  } catch (e: Throwable) {
+    onError("Mic start failed: ${e.message}")
+    stop()
+  }
   }
 
   fun stop() {

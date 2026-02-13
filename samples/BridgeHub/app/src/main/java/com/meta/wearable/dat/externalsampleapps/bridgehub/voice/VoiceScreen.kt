@@ -23,7 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.meta.wearable.dat.externalsampleapps.bridgehub.R
@@ -36,6 +36,9 @@ fun VoiceScreen(
   var status by remember { mutableStateOf("disconnected") }
   var lastUserText by remember { mutableStateOf("") }
   var lastAssistantText by remember { mutableStateOf("") }
+  var isRecording by remember { mutableStateOf(false) }
+  var bytesSent by remember { mutableStateOf(0L) }
+  var micLastError by remember { mutableStateOf<String?>(null) }
 
   val audioPlayer = remember { AudioPlayer() }
   val relayClient =
@@ -58,8 +61,10 @@ fun VoiceScreen(
       remember {
         MicStreamer(
             onPcmChunk = { pcmBytes ->
+              bytesSent += pcmBytes.size.toLong()
               relayClient.sendAudioInput(pcmBytes)
             },
+            onError = { msg -> micLastError = msg },
         )
       }
 
@@ -108,6 +113,8 @@ fun VoiceScreen(
     }
 
     Text(text = "Status: $status")
+    Text(text = "Recording: $isRecording | bytesSent: $bytesSent")
+    micLastError?.let { Text(text = "Mic error: $it") }
 
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -123,29 +130,28 @@ fun VoiceScreen(
         horizontalArrangement = Arrangement.Center,
     ) {
       Button(
-          onClick = { /* handled by pointer events */ },
+          onClick = { /* handled by press gesture */ },
           modifier =
               Modifier
-                  .pointerInteropFilter { motionEvent ->
-                    when (motionEvent.actionMasked) {
-                      android.view.MotionEvent.ACTION_DOWN -> {
-                        if (status == "connected") {
+                  .pointerInput(status) {
+                    detectTapGestures(
+                        onPress = {
+                          if (status != "connected") return@detectTapGestures
+                          micLastError = null
+                          bytesSent = 0
+                          isRecording = true
                           audioPlayer.stop()
                           relayClient.sendPause()
                           micStreamer.start()
-                        }
-                        true
-                      }
-                      android.view.MotionEvent.ACTION_UP,
-                      android.view.MotionEvent.ACTION_CANCEL -> {
-                        if (status == "connected") {
-                          micStreamer.stop()
-                          relayClient.sendResume()
-                        }
-                        true
-                      }
-                      else -> false
-                    }
+                          try {
+                            tryAwaitRelease()
+                          } finally {
+                            micStreamer.stop()
+                            relayClient.sendResume()
+                            isRecording = false
+                          }
+                        },
+                    )
                   },
       ) {
         Text("PTT")
