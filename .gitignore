@@ -1,0 +1,51 @@
+# Android / Gradle / IntelliJ
+*.iml
+.idea/
+.gradle/
+**/.gradle/
+build/
+**/build/
+out/
+**/out/
+
+# Android local configuration (never commit)
+local.properties
+**/local.properties
+
+# Android Studio tooling
+.externalNativeBuild/
+**/.externalNativeBuild/
+.cxx/
+**/.cxx/
+captures/
+**/captures/
+
+# Kotlin/Compose caches
+.kotlin/
+**/.kotlin/
+
+# Outputs
+*.apk
+*.ap_
+*.aab
+*.aar
+
+# Keystores (tracked files remain tracked; this prevents accidental adds)
+*.jks
+*.keystore
+*.pkcs12
+*.p12
+
+# Logs and crash dumps
+*.log
+*.hprof
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+
