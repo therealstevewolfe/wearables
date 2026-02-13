@@ -72,12 +72,25 @@ class RelayClient(
     ws?.send(JSONObject(mapOf("type" to "resume_assistant_message")).toString())
   }
 
-  fun sendAudioInput(pcm16Mono16k: ByteArray) {
-    val b64 = Base64.encodeToString(pcm16Mono16k, Base64.NO_WRAP)
+  fun sendAudioInput(pcm16Mono: ByteArray) {
+    val b64 = Base64.encodeToString(pcm16Mono, Base64.NO_WRAP)
     val obj = JSONObject()
     obj.put("type", "audio_input")
     obj.put("data", b64)
     ws?.send(obj.toString())
+  }
+
+  /** Debug: bypass STT and force a user_message to verify the response path. */
+  fun sendUserText(text: String) {
+    val msg = JSONObject()
+    msg.put("type", "user_message")
+    msg.put(
+        "message",
+        JSONObject()
+            .put("role", "user")
+            .put("content", text),
+    )
+    ws?.send(msg.toString())
   }
 
   private fun handleMessage(text: String) {

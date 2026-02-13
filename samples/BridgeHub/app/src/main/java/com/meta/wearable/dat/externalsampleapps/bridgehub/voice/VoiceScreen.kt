@@ -40,6 +40,7 @@ fun VoiceScreen(
   var isRecording by remember { mutableStateOf(false) }
   var bytesSent by remember { mutableStateOf(0L) }
   var micLastError by remember { mutableStateOf<String?>(null) }
+  var levelPeak by remember { mutableStateOf(0) }
 
   val audioPlayer = remember { AudioPlayer() }
   val relayClient =
@@ -62,6 +63,19 @@ fun VoiceScreen(
       remember {
         MicStreamer(
             onPcmChunk = { pcmBytes ->
+              // Compute a simple peak meter (0..32767). If this stays ~0, we're sending silence.
+              var peak = 0
+              var i = 0
+              while (i + 1 < pcmBytes.size) {
+                val lo = pcmBytes[i].toInt() and 0xff
+                val hi = pcmBytes[i + 1].toInt()
+                val s = (hi shl 8) or lo
+                val v = kotlin.math.abs(s.toShort().toInt())
+                if (v > peak) peak = v
+                i += 2
+              }
+              levelPeak = peak
+
               bytesSent += pcmBytes.size.toLong()
               relayClient.sendAudioInput(pcmBytes)
             },
@@ -120,13 +134,39 @@ fun VoiceScreen(
     }
 
     Text(text = "Status: $status")
-    Text(text = "Recording: $isRecording | bytesSent: $bytesSent")
+    Text(text = "Recording: $isRecording | bytesSent: $bytesSent | levelPeak: $levelPeak")
     micLastError?.let { Text(text = "Mic error: $it") }
 
     Spacer(modifier = Modifier.height(8.dp))
 
     Text(text = "You: $lastUserText")
     Text(text = "MC: $lastAssistantText")
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Button(
+          onClick = { relayClient.sendUserText("ping") },
+          enabled = status == "connected" && !isRecording,
+          modifier = Modifier.weight(1f),
+      ) {
+        Text("TEST TEXT")
+      }
+      Button(
+          onClick = {
+            // Clear UI
+            lastUserText = ""
+            lastAssistantText = ""
+            micLastError = null
+            levelPeak = 0
+            bytesSent = 0
+          },
+          modifier = Modifier.weight(1f),
+      ) {
+        Text("CLEAR")
+      }
+    }
 
     Spacer(modifier = Modifier.height(8.dp))
 
