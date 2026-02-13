@@ -72,10 +72,20 @@ class RelayClient(
     ws?.send(JSONObject(mapOf("type" to "resume_assistant_message")).toString())
   }
 
-  fun sendAudioInput(pcm16Mono: ByteArray, sampleRate: Int = 48000) {
-    // Hume EVI accepts many encoded formats; wrapping raw PCM as WAV is the simplest.
-    val wav = WavUtil.wrapPcm16AsWav(pcm16Mono, sampleRate = sampleRate, channels = 1)
-    val b64 = Base64.encodeToString(wav, Base64.NO_WRAP)
+// (no audio_input_end; EVI uses streaming/VAD)
+
+  fun sendWavHeader(sampleRate: Int = 48000) {
+    val header = WavUtil.streamingPcm16WavHeader(sampleRate = sampleRate, channels = 1)
+    val b64 = Base64.encodeToString(header, Base64.NO_WRAP)
+    val obj = JSONObject()
+    obj.put("type", "audio_input")
+    obj.put("data", b64)
+    ws?.send(obj.toString())
+  }
+
+  fun sendAudioInputPcm(pcm16Mono: ByteArray) {
+    // IMPORTANT: For WAV streaming we send a WAV header once, then raw PCM bytes after.
+    val b64 = Base64.encodeToString(pcm16Mono, Base64.NO_WRAP)
     val obj = JSONObject()
     obj.put("type", "audio_input")
     obj.put("data", b64)
