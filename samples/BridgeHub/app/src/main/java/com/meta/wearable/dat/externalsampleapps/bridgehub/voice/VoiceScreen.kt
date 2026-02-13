@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -23,8 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
+// (removed pointerInput; using toggle UI)
+// (removed detectTapGestures; using toggle UI)
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.meta.wearable.dat.externalsampleapps.bridgehub.R
@@ -107,6 +107,7 @@ fun VoiceScreen(
       }
       Button(
           onClick = {
+            isRecording = false
             micStreamer.stop()
             relayClient.close()
             audioPlayer.stop()
@@ -129,41 +130,73 @@ fun VoiceScreen(
 
     Spacer(modifier = Modifier.height(8.dp))
 
-    // Push-to-talk
-    Text(text = stringResource(R.string.voice_hold_to_talk))
+    // Toggle-to-talk
+    Text(text = "Mic")
 
-    val pttColor =
-        if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-
-    Button(
-        onClick = { /* handled by press gesture */ },
-        colors = ButtonDefaults.buttonColors(containerColor = pttColor),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(96.dp)
-                .pointerInput(status) {
-                  detectTapGestures(
-                      onPress = {
-                        if (status != "connected") return@detectTapGestures
-                        micLastError = null
-                        bytesSent = 0
-                        isRecording = true
-                        audioPlayer.stop()
-                        relayClient.sendPause()
-                        micStreamer.start()
-                        try {
-                          tryAwaitRelease()
-                        } finally {
-                          micStreamer.stop()
-                          relayClient.sendResume()
-                          isRecording = false
-                        }
-                      },
-                  )
-                },
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-      Text(if (isRecording) "LISTENING…" else "HOLD TO TALK")
+      Text(text = if (isRecording) "ON (listening)" else "OFF")
+
+      Switch(
+          checked = isRecording,
+          enabled = status == "connected",
+          onCheckedChange = { checked ->
+            if (checked) {
+              if (status != "connected") {
+                isRecording = false
+                return@Switch
+              }
+              micLastError = null
+              bytesSent = 0
+              isRecording = true
+              audioPlayer.stop()
+              relayClient.sendPause()
+              micStreamer.start()
+            } else {
+              // Stop capture and let the assistant speak.
+              micStreamer.stop()
+              relayClient.sendResume()
+              isRecording = false
+            }
+          },
+      )
+    }
+
+    // Big explicit buttons (easier than press/hold on some devices)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Button(
+          onClick = {
+            if (status != "connected") return@Button
+            micLastError = null
+            bytesSent = 0
+            isRecording = true
+            audioPlayer.stop()
+            relayClient.sendPause()
+            micStreamer.start()
+          },
+          enabled = status == "connected" && !isRecording,
+          modifier = Modifier.weight(1f).height(64.dp),
+      ) {
+        Text("START")
+      }
+
+      Button(
+          onClick = {
+            micStreamer.stop()
+            relayClient.sendResume()
+            isRecording = false
+          },
+          enabled = status == "connected" && isRecording,
+          modifier = Modifier.weight(1f).height(64.dp),
+      ) {
+        Text("STOP")
+      }
     }
   }
 }
