@@ -19,6 +19,14 @@
     <string name="live_stream" description="Live Stream">Live bridge stream</string>
     <string name="share_ready_message" description="Share started message">Share sheet opened. Pick your LLM-capable app.</string>
 
+    <!-- Voice Screen -->
+    <string name="voice_button_title" description="Voice screen entry">Voice</string>
+    <string name="voice_screen_title" description="Voice screen title">MC Voice</string>
+    <string name="voice_connect" description="Connect button">Connect</string>
+    <string name="voice_disconnect" description="Disconnect button">Disconnect</string>
+    <string name="voice_hold_to_talk" description="PTT label">Hold to talk</string>
+    <string name="voice_relay_url" description="Relay URL label">Relay URL</string>
+
     <!-- Non Stream Screen -->
     <string name="camera_access_icon_description" description="Bridge Hub icon description">Bridge Hub icon</string>
     <string name="non_stream_screen_description" description="Non stream screen description">Start the bridge stream for live video forwarding and use capture to send snapshots to LLM-capable apps.</string>

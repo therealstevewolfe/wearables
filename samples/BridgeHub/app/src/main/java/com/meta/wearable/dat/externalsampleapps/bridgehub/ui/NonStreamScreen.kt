@@ -165,6 +165,22 @@ fun NonStreamScreen(
           }
         }
 
+        // Voice Button
+        SwitchButton(
+            label = stringResource(R.string.voice_button_title),
+            onClick = {
+              context.startActivity(
+                  android.content.Intent(
+                      context,
+                      com.meta.wearable.dat.externalsampleapps.bridgehub.voice.VoiceActivity::class.java,
+                  ),
+              )
+            },
+            enabled = true,
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Start Streaming Button
         SwitchButton(
             label = stringResource(R.string.stream_button_title),

@@ -94,6 +94,20 @@ fun StreamScreen(
             modifier = Modifier.weight(1f),
         )
 
+        SwitchButton(
+            label = stringResource(R.string.voice_button_title),
+            onClick = {
+              val ctx = (LocalActivity.current ?: return@SwitchButton)
+              ctx.startActivity(
+                  android.content.Intent(
+                      ctx,
+                      com.meta.wearable.dat.externalsampleapps.bridgehub.voice.VoiceActivity::class.java,
+                  ),
+              )
+            },
+            modifier = Modifier.weight(1f),
+        )
+
         // Photo capture button
         CaptureButton(
             onClick = { streamViewModel.capturePhoto() },

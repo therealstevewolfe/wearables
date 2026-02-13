@@ -63,6 +63,7 @@ dependencies {
   implementation(libs.androidx.material.icons.extended)
   implementation(libs.androidx.material3)
   implementation(libs.kotlinx.collections.immutable)
+  implementation(libs.okhttp)
   implementation(libs.mwdat.core)
   implementation(libs.mwdat.camera)
   implementation(libs.mwdat.mockdevice)
