@@ -72,8 +72,10 @@ class RelayClient(
     ws?.send(JSONObject(mapOf("type" to "resume_assistant_message")).toString())
   }
 
-  fun sendAudioInput(pcm16Mono: ByteArray) {
-    val b64 = Base64.encodeToString(pcm16Mono, Base64.NO_WRAP)
+  fun sendAudioInput(pcm16Mono: ByteArray, sampleRate: Int = 48000) {
+    // Hume EVI accepts many encoded formats; wrapping raw PCM as WAV is the simplest.
+    val wav = WavUtil.wrapPcm16AsWav(pcm16Mono, sampleRate = sampleRate, channels = 1)
+    val b64 = Base64.encodeToString(wav, Base64.NO_WRAP)
     val obj = JSONObject()
     obj.put("type", "audio_input")
     obj.put("data", b64)
@@ -82,14 +84,10 @@ class RelayClient(
 
   /** Debug: bypass STT and force a user_message to verify the response path. */
   fun sendUserText(text: String) {
+    // According to Hume EVI, the send-side text event is UserInput.
     val msg = JSONObject()
-    msg.put("type", "user_message")
-    msg.put(
-        "message",
-        JSONObject()
-            .put("role", "user")
-            .put("content", text),
-    )
+    msg.put("type", "user_input")
+    msg.put("text", text)
     ws?.send(msg.toString())
   }
 
