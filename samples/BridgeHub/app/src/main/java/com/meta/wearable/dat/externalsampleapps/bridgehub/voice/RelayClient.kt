@@ -74,17 +74,11 @@ class RelayClient(
 
 // (no audio_input_end; EVI uses streaming/VAD)
 
-  fun sendWavHeader(sampleRate: Int = 48000) {
-    val header = WavUtil.streamingPcm16WavHeader(sampleRate = sampleRate, channels = 1)
-    val b64 = Base64.encodeToString(header, Base64.NO_WRAP)
-    val obj = JSONObject()
-    obj.put("type", "audio_input")
-    obj.put("data", b64)
-    ws?.send(obj.toString())
-  }
-
-  fun sendAudioInputPcm(pcm16Mono: ByteArray) {
-    // IMPORTANT: For WAV streaming we send a WAV header once, then raw PCM bytes after.
+  /**
+   * Send raw PCM16LE mono audio. EVI decodes it according to session_settings.audio
+   * on the server side (relay -> Hume EVI).
+   */
+  fun sendAudioInput(pcm16Mono: ByteArray) {
     val b64 = Base64.encodeToString(pcm16Mono, Base64.NO_WRAP)
     val obj = JSONObject()
     obj.put("type", "audio_input")

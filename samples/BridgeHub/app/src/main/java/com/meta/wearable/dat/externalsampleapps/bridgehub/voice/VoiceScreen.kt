@@ -77,7 +77,7 @@ fun VoiceScreen(
               levelPeak = peak
 
               bytesSent += pcmBytes.size.toLong()
-              relayClient.sendAudioInputPcm(pcmBytes)
+              relayClient.sendAudioInput(pcmBytes)
             },
             onError = { msg -> micLastError = msg },
         )
@@ -194,7 +194,6 @@ fun VoiceScreen(
               isRecording = true
               audioPlayer.stop()
               relayClient.sendPause()
-              relayClient.sendWavHeader(sampleRate = 48000)
               micStreamer.start()
             } else {
               // Stop capture and let the assistant speak.
@@ -219,7 +218,6 @@ fun VoiceScreen(
             isRecording = true
             audioPlayer.stop()
             relayClient.sendPause()
-            relayClient.sendWavHeader(sampleRate = 48000)
             micStreamer.start()
           },
           enabled = status == "connected" && !isRecording,
